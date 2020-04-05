@@ -47,3 +47,4 @@ import torch.optim as optim
 params = list(detector.avgpool.parameters()) + list(detector.fc.parameters()) +\
                                                           list(detector.classifier.parameters())
 optimizer = optim.Adam(params, lr=.01)
+criteria = nn.BCEWithLogitsLoss()
