@@ -61,7 +61,7 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
     val_loss = 0
 
     model.train()
-    print('---------------------------\nTRAINING PHASE EPOCH %s:'%e)
+    print('---------------------------\nTRAINING PHASE EPOCH %s:'%(e+1))
     for data, target in tqdm.notebook.tqdm(data_loader):
       data = data.to(device)
       target = target.float().to(device)
@@ -76,7 +76,7 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
     train_loss = train_loss/len(data_loader)
 
     model.eval()
-    print('VALIDATING PHASE EPOCH %s:'%epoch)
+    print('VALIDATING PHASE EPOCH %s:'%(e+1))
     for data, target in tqdm.notebook.tqdm(valid_loader):
       data = data.to(device)
       target = target.float().to(device)
@@ -93,7 +93,8 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
     ## save the model if validation loss has decreased
     if val_loss < val_loss_min:
       delta = val_loss_min-val_loss
-      print('#########################\nValidation loss decreased by %.6f (%.3f)%% Saving model....\n#########################'%(delta, delta/valid_loss_min*100))
+      print('#########################\nValidation loss decreased by %.6f (%.3f)%%\
+      Saving model....\n#########################'%(delta, delta/val_loss_min*100))
       torch.save(model.state_dict(), save_model)
 
       val_loss_min = val_loss
