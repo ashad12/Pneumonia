@@ -32,6 +32,8 @@ for param in detector.parameters():
 
 for p in detector.fc.parameters():
   p.requires_grad = True
+for p in detector.avgpool.parameters():
+  p.requires_grad = True
 
 classifier = nn.Sequential(nn.Linear(1000, 500),
                            nn.ReLU(),
@@ -40,12 +42,11 @@ classifier = nn.Sequential(nn.Linear(1000, 500),
                            nn.ReLU(), nn.Dropout(.3),
                            nn.Linear(200, 30), nn.ReLU(), nn.Dropout(.3),
                            nn.Linear(30, 1))
-detector.add_module('classifier',classifier)
+detector.add_module('fc',classifier)
 
 ## Optimization and loss criteria
 import torch.optim as optim
-params = list(detector.avgpool.parameters()) + list(detector.fc.parameters()) +\
-                                                          list(detector.classifier.parameters())
+params = list(detector.avgpool.parameters()) + list(detector.fc.parameters())
 optimizer = optim.Adam(params, lr=.01)
 criteria = nn.BCEWithLogitsLoss()
 
