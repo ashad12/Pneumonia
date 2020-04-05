@@ -48,3 +48,68 @@ params = list(detector.avgpool.parameters()) + list(detector.fc.parameters()) +\
                                                           list(detector.classifier.parameters())
 optimizer = optim.Adam(params, lr=.01)
 criteria = nn.BCEWithLogitsLoss()
+
+## Training function:
+def train(model, epoch, data_loader, valid_loader, optimizer,
+          criterion, save_model, early_stop=.1):
+  device = 'cuda' if torch.cuda.is_available() else 'cpu'
+  val_loss_min = np.inf
+  model = model.to(device)
+
+  for e in range(epoch):
+    train_loss = 0
+    val_loss = 0
+
+    model.train()
+    print('---------------------------\nTRAINING PHASE EPOCH %s:'%e)
+    for data, target in tqdm.notebook.tqdm(data_loader):
+      data = data.to(device)
+      target = target.float().to(device)
+
+      pred = model.forward(data)
+      loss = criterion(pred.squeeze(), target)
+      train_loss += loss
+      optimizer.zero_grad()
+      loss.backward()
+      optimizer.step()
+
+    train_loss = train_loss/len(data_loader)
+
+    model.eval()
+    print('VALIDATING PHASE EPOCH %s:'%epoch)
+    for data, target in tqdm.notebook.tqdm(valid_loader):
+      data = data.to(device)
+      target = target.float().to(device)
+      pred = model.forward(data)
+      loss = criterion(pred.squeeze(), target)
+      val_loss += loss
+
+    val_loss = val_loss/len(val_loader)
+
+    # print training/validation statistics
+    print('Epoch: {} \tTraining Loss: {:.6f} \tValidation Loss: {:.6f}'.format(
+        epoch, train_loss, val_loss))
+
+    ## save the model if validation loss has decreased
+    if val_loss < val_loss_min:
+      delta = val_loss_min-val_loss
+      print('#########################\nValidation loss decreased by %.6f (%.3f)%% Saving model....\n#########################'%(delta, delta/valid_loss_min*100))
+      torch.save(model.state_dict(), save_model)
+
+      val_loss_min = val_loss
+      terminate = 0
+
+    elif valid_loss >= (1+early_stop)*val_loss_min:
+      terminate +=1
+
+    else:
+      terminate =0
+
+    if terminate == 3:
+      print('it is diverging...')
+      break
+    # return trained model
+  return model
+
+pn_detector = train(detector, 100, train_loader, val_loader, optimizer,
+                    criterion, os.path.join(dir, 'model_params.pt'))
