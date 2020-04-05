@@ -41,3 +41,9 @@ classifier = nn.Sequential(nn.Linear(1000, 500),
                            nn.Linear(200, 30), nn.ReLU(), nn.Dropout(.3),
                            nn.Linear(30, 1))
 detector.add_module('classifier',classifier)
+
+## Optimization and loss criteria
+import torch.optim as optim
+params = list(detector.avgpool.parameters()) + list(detector.fc.parameters()) +\
+                                                          list(detector.classifier.parameters())
+optimizer = optim.Adam(params, lr=.01)
