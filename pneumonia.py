@@ -100,7 +100,7 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
       val_loss_min = val_loss
       terminate = 0
 
-    elif valid_loss >= (1+early_stop)*val_loss_min:
+    elif val_loss >= (1+early_stop)*val_loss_min:
       terminate +=1
 
     else:
