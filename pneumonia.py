@@ -1,11 +1,12 @@
 import os
-import torch
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
+from torchvision import models
 from torchvision import transforms
 from torchvision import datasets
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import recall_score
@@ -13,7 +14,7 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
 
 ##Preprocessing and loading data
-transform = transforms.Compose([transforms.Resize(800), transforms.CenterCrop(500),
+transform = transforms.Compose([#transforms.Resize(800), transforms.CenterCrop(500),
                                 transforms.Resize(224), transforms.RandomRotation(10), transforms.ToTensor(),
                                 transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])])
@@ -27,6 +28,7 @@ val_loader = torch.utils.data.DataLoader(val, batch_size=4, shuffle=True)
 test_loader = torch.utils.data.DataLoader(test, batch_size=len(test.targets), shuffle=True)
 
 ##Defining the model
+detector = models.resnet50(pretrained=True)
 for param in detector.parameters():
   param.requires_grad = False
 
@@ -115,3 +117,21 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
 
 pn_detector = train(detector, 100, train_loader, val_loader, optimizer,
                     criterion, os.path.join(dir, 'model_params.pt'))
+
+## Testing
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+pn_detector.load_state_dict(torch.load(os.path.join(dir, 'model_params.pt')))
+
+data,target = next(iter(test_loader2))
+data = data.to(device)
+pred = pn_detector(data)
+pred = torch.round(F.sigmoid(pred.squeeze()))
+pred = pred.cpu().detach().numpy()
+
+T = target.numpy()
+
+rec = recall_score(T, pred)
+per = precision_score(T, pred)
+cm = confusion_matrix(T, pred)
+print(f'accuracy: {acc}\nrecal: {rec} \npercision: {per}')
+print(f'\nCM:\n{cm}')
