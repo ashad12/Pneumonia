@@ -1,16 +1,16 @@
 import os
-import pandas as pd
 import torch
 from PIL import Image
 import matplotlib.pyplot as plt
-# import shutil
-# import random
 import numpy as np
-# import glob
 import tqdm
 from torchvision import transforms
 from torchvision import datasets
 import torch.nn as nn
+import torch.nn.functional as F
+from sklearn.metrics import recall_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import confusion_matrix
 
 ##Preprocessing and loading data
 transform = transforms.Compose([transforms.Resize(800), transforms.CenterCrop(500),
@@ -23,8 +23,8 @@ val = datasets.ImageFolder(os.path.join(dir, 'val'), transform=transform)
 test = datasets.ImageFolder(os.path.join(dir, 'test'), transform=transform)
 
 train_loader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
-val_loader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
-test_loader = torch.utils.data.DataLoader(train, batch_size=64, shuffle=True)
+val_loader = torch.utils.data.DataLoader(val, batch_size=4, shuffle=True)
+test_loader = torch.utils.data.DataLoader(test, batch_size=len(test.targets), shuffle=True)
 
 ##Defining the model
 for param in detector.parameters():
@@ -47,7 +47,7 @@ detector.add_module('fc',classifier)
 ## Optimization and loss criteria
 import torch.optim as optim
 params = list(detector.avgpool.parameters()) + list(detector.fc.parameters())
-optimizer = optim.Adam(params, lr=.01)
+optimizer = optim.Adam(params, lr=.001, betas=(.4, .999))
 criteria = nn.BCEWithLogitsLoss()
 
 ## Training function:
@@ -89,7 +89,7 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
 
     # print training/validation statistics
     print('Epoch: {} \tTraining Loss: {:.6f} \tValidation Loss: {:.6f}'.format(
-        epoch, train_loss, val_loss))
+        (e+1), train_loss, val_loss))
 
     ## save the model if validation loss has decreased
     if val_loss < val_loss_min:
@@ -107,7 +107,7 @@ def train(model, epoch, data_loader, valid_loader, optimizer,
     else:
       terminate =0
 
-    if terminate == 3:
+    if terminate == 5:
       print('it is diverging...')
       break
     # return trained model
